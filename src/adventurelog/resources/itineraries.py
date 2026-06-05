@@ -10,10 +10,6 @@ from adventurelog.models.collection import (
 )
 from adventurelog.resources.base import BaseResource
 
-# Short aliases used only for type annotations in this module.
-_Item = CollectionItineraryItem
-_Day = CollectionItineraryDay
-
 
 class ItinerariesResource(BaseResource):
     """Resource for collection itinerary endpoints.
@@ -32,16 +28,16 @@ class ItinerariesResource(BaseResource):
     # Itinerary items  (/api/itineraries/)
     # ------------------------------------------------------------------
 
-    async def list_items(self) -> list[_Item]:
+    async def list_items(self) -> list[CollectionItineraryItem]:
         """Return all itinerary items for the current user.
 
         Returns:
             List of CollectionItineraryItem instances.
         """
         resp = await self._http.get("/api/itineraries/")
-        return [_Item.model_validate(item) for item in resp.json()]
+        return [CollectionItineraryItem.model_validate(item) for item in resp.json()]
 
-    async def get_item(self, id: str) -> _Item:
+    async def get_item(self, id: str) -> CollectionItineraryItem:
         """Retrieve a single itinerary item by ID.
 
         Args:
@@ -51,9 +47,9 @@ class ItinerariesResource(BaseResource):
             The matching CollectionItineraryItem.
         """
         resp = await self._http.get(f"/api/itineraries/{id}/")
-        return _Item.model_validate(resp.json())
+        return CollectionItineraryItem.model_validate(resp.json())
 
-    async def create_item(self, data: dict[str, Any]) -> _Item:
+    async def create_item(self, data: dict[str, Any]) -> CollectionItineraryItem:
         """Create a new itinerary item.
 
         Args:
@@ -63,9 +59,11 @@ class ItinerariesResource(BaseResource):
             The newly created CollectionItineraryItem.
         """
         resp = await self._http.post("/api/itineraries/", json=data)
-        return _Item.model_validate(resp.json())
+        return CollectionItineraryItem.model_validate(resp.json())
 
-    async def update_item(self, id: str, data: dict[str, Any]) -> _Item:
+    async def update_item(
+        self, id: str, data: dict[str, Any]
+    ) -> CollectionItineraryItem:
         """Replace an itinerary item (full update).
 
         Args:
@@ -76,11 +74,11 @@ class ItinerariesResource(BaseResource):
             The updated CollectionItineraryItem.
         """
         resp = await self._http.put(f"/api/itineraries/{id}/", json=data)
-        return _Item.model_validate(resp.json())
+        return CollectionItineraryItem.model_validate(resp.json())
 
     async def partial_update_item(
         self, id: str, data: dict[str, Any]
-    ) -> _Item:
+    ) -> CollectionItineraryItem:
         """Partially update an itinerary item.
 
         Args:
@@ -91,7 +89,7 @@ class ItinerariesResource(BaseResource):
             The updated CollectionItineraryItem.
         """
         resp = await self._http.patch(f"/api/itineraries/{id}/", json=data)
-        return _Item.model_validate(resp.json())
+        return CollectionItineraryItem.model_validate(resp.json())
 
     async def delete_item(self, id: str) -> None:
         """Delete an itinerary item.
@@ -105,16 +103,16 @@ class ItinerariesResource(BaseResource):
     # Itinerary days  (/api/itinerary-days/)
     # ------------------------------------------------------------------
 
-    async def list_days(self) -> list[_Day]:
+    async def list_days(self) -> list[CollectionItineraryDay]:
         """Return all itinerary days for the current user.
 
         Returns:
             List of CollectionItineraryDay instances.
         """
         resp = await self._http.get("/api/itinerary-days/")
-        return [_Day.model_validate(item) for item in resp.json()]
+        return [CollectionItineraryDay.model_validate(item) for item in resp.json()]
 
-    async def get_day(self, id: str) -> _Day:
+    async def get_day(self, id: str) -> CollectionItineraryDay:
         """Retrieve a single itinerary day by ID.
 
         Args:
@@ -124,9 +122,9 @@ class ItinerariesResource(BaseResource):
             The matching CollectionItineraryDay.
         """
         resp = await self._http.get(f"/api/itinerary-days/{id}/")
-        return _Day.model_validate(resp.json())
+        return CollectionItineraryDay.model_validate(resp.json())
 
-    async def create_day(self, data: dict[str, Any]) -> _Day:
+    async def create_day(self, data: dict[str, Any]) -> CollectionItineraryDay:
         """Create a new itinerary day.
 
         Args:
@@ -136,9 +134,9 @@ class ItinerariesResource(BaseResource):
             The newly created CollectionItineraryDay.
         """
         resp = await self._http.post("/api/itinerary-days/", json=data)
-        return _Day.model_validate(resp.json())
+        return CollectionItineraryDay.model_validate(resp.json())
 
-    async def update_day(self, id: str, data: dict[str, Any]) -> _Day:
+    async def update_day(self, id: str, data: dict[str, Any]) -> CollectionItineraryDay:
         """Replace an itinerary day (full update).
 
         Args:
@@ -149,11 +147,11 @@ class ItinerariesResource(BaseResource):
             The updated CollectionItineraryDay.
         """
         resp = await self._http.put(f"/api/itinerary-days/{id}/", json=data)
-        return _Day.model_validate(resp.json())
+        return CollectionItineraryDay.model_validate(resp.json())
 
     async def partial_update_day(
         self, id: str, data: dict[str, Any]
-    ) -> _Day:
+    ) -> CollectionItineraryDay:
         """Partially update an itinerary day.
 
         Args:
@@ -164,7 +162,7 @@ class ItinerariesResource(BaseResource):
             The updated CollectionItineraryDay.
         """
         resp = await self._http.patch(f"/api/itinerary-days/{id}/", json=data)
-        return _Day.model_validate(resp.json())
+        return CollectionItineraryDay.model_validate(resp.json())
 
     async def delete_day(self, id: str) -> None:
         """Delete an itinerary day.

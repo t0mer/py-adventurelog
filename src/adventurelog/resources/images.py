@@ -37,10 +37,9 @@ class ImagesResource(BaseResource):
         return ContentImage.model_validate(resp.json())
 
     async def create(self, data: dict[str, Any]) -> ContentImage:
-        """Upload/create a new image record.
+        """Create a new image record.
 
-        For multipart file uploads, pass ``content`` as ``data`` and include
-        file data in the request.  For simple JSON metadata, pass a dict.
+        Pass metadata fields as a dict; this sends a JSON body.
 
         Args:
             data: Image field data.

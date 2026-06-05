@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from builtins import list as _BuiltinList
 from typing import Any
 
 from adventurelog.models.note import Note
@@ -24,7 +25,7 @@ class NotesResource(BaseResource):
         resp = await self._http.get("/api/notes/")
         return [Note.model_validate(item) for item in resp.json()]
 
-    async def all_notes(self) -> list[Note]:
+    async def all_notes(self) -> _BuiltinList[Note]:
         """Return all notes including those from shared collections.
 
         Returns:
