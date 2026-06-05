@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import ConfigDict
-
 from adventurelog.models.attachment import Attachment
 from adventurelog.models.category import Category
 from adventurelog.models.common import AdventureLogModel
@@ -18,9 +16,7 @@ from adventurelog.models.visit import Visit
 class Location(AdventureLogModel):
     """A location (place visited or planned) — the core AdventureLog entity."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     name: str | None = None
     description: str | None = None
     rating: str | None = None  # DecimalField serialized as string

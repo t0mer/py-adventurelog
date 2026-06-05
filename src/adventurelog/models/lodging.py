@@ -4,19 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import ConfigDict
-
-from adventurelog.models.attachment import Attachment
 from adventurelog.models.common import AdventureLogModel
-from adventurelog.models.image import ContentImage
 
 
 class Lodging(AdventureLogModel):
     """A lodging (hotel, Airbnb, etc.) associated with a collection."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     user: int | str | None = None
     name: str | None = None
     description: str | None = None
@@ -36,5 +30,5 @@ class Lodging(AdventureLogModel):
     updated_at: datetime | None = None
     type: str | None = None
     timezone: str | None = None
-    images: list[ContentImage] = []
-    attachments: list[Attachment] = []
+    images: str | None = None  # HyperlinkedRelatedField — URL string
+    attachments: str | None = None  # HyperlinkedRelatedField — URL string

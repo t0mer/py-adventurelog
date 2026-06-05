@@ -5,17 +5,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import ConfigDict
-
 from adventurelog.models.common import AdventureLogModel
 
 
 class Trail(AdventureLogModel):
     """A trail associated with a location."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     user: int | str | None = None
     name: str | None = None
     location: str | None = None

@@ -5,17 +5,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import ConfigDict
-
 from adventurelog.models.common import AdventureLogModel
 
 
 class Activity(AdventureLogModel):
     """An activity (e.g. a hike, bike ride) linked to a visit."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     user: int | str | None = None
     visit: int | str | None = None
     trail: int | str | None = None
@@ -36,7 +32,7 @@ class Activity(AdventureLogModel):
     average_speed: str | None = None  # DecimalField serialized as string
     max_speed: str | None = None  # DecimalField serialized as string
     average_cadence: str | None = None  # DecimalField serialized as string
-    calories: int | None = None
+    calories: float | None = None
     start_lat: str | None = None  # DecimalField serialized as string
     start_lng: str | None = None  # DecimalField serialized as string
     end_lat: str | None = None  # DecimalField serialized as string

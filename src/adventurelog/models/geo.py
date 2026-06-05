@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-from pydantic import ConfigDict
-
 from adventurelog.models.common import AdventureLogModel
 
 
 class Country(AdventureLogModel):
     """A country reference object."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     id: int | None = None
     flag_url: str | None = None
@@ -27,8 +23,6 @@ class Country(AdventureLogModel):
 class Region(AdventureLogModel):
     """A region (state/province) reference object."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
     id: int | None = None
     num_cities: int | None = None
     country_name: str | None = None
@@ -40,8 +34,6 @@ class Region(AdventureLogModel):
 
 class City(AdventureLogModel):
     """A city reference object."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     id: int | None = None
     region_name: str | None = None
@@ -55,11 +47,9 @@ class City(AdventureLogModel):
 class VisitedCity(AdventureLogModel):
     """A city that the user has visited."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
     id: int | None = None
     user: int | str | None = None
-    city: City | None = None
+    city: str | None = None  # FK UUID string in API responses
     longitude: str | None = None  # DecimalField serialized as string
     latitude: str | None = None  # DecimalField serialized as string
     name: str | None = None
@@ -68,11 +58,9 @@ class VisitedCity(AdventureLogModel):
 class VisitedRegion(AdventureLogModel):
     """A region that the user has visited."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
     id: int | None = None
     user: int | str | None = None
-    region: Region | None = None
+    region: str | None = None  # FK UUID string in API responses
     longitude: str | None = None  # DecimalField serialized as string
     latitude: str | None = None  # DecimalField serialized as string
     name: str | None = None

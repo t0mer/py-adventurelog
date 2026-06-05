@@ -4,15 +4,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import ConfigDict
-
 from adventurelog.models.common import AdventureLogModel
 
 
 class CustomUserDetails(AdventureLogModel):
     """Detailed user profile information."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     pk: int | None = None
     profile_pic: str | None = None  # URL
@@ -34,9 +30,7 @@ class CustomUserDetails(AdventureLogModel):
 class ImmichIntegration(AdventureLogModel):
     """Immich photo server integration configuration."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     server_url: str | None = None
     api_key: str | None = None  # key prefix only returned in GET
     copy_locally: bool | None = None
@@ -46,9 +40,7 @@ class ImmichIntegration(AdventureLogModel):
 class APIKey(AdventureLogModel):
     """An API key for programmatic access."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     name: str | None = None
     key_prefix: str | None = None
     created_at: datetime | None = None
@@ -57,7 +49,5 @@ class APIKey(AdventureLogModel):
 
 class APIKeyCreate(AdventureLogModel):
     """Request body for creating a new API key."""
-
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     name: str

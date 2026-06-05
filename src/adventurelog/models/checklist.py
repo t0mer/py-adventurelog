@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
-from pydantic import ConfigDict
+import datetime
+from datetime import datetime as DateTime
 
 from adventurelog.models.common import AdventureLogModel
 
@@ -12,28 +11,24 @@ from adventurelog.models.common import AdventureLogModel
 class ChecklistItem(AdventureLogModel):
     """An individual item within a checklist."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     user: int | str | None = None
     name: str | None = None
     is_checked: bool | None = None
     checklist: int | str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+    created_at: DateTime | None = None
+    updated_at: DateTime | None = None
 
 
 class Checklist(AdventureLogModel):
     """A checklist associated with a collection."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     user: int | str | None = None
     name: str | None = None
-    date: datetime | None = None
+    date: datetime.date | None = None
     is_public: bool | None = None
     collection: int | str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
+    created_at: DateTime | None = None
+    updated_at: DateTime | None = None
     items: list[ChecklistItem] = []

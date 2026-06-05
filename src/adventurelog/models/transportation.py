@@ -4,19 +4,13 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import ConfigDict
-
-from adventurelog.models.attachment import Attachment
 from adventurelog.models.common import AdventureLogModel
-from adventurelog.models.image import ContentImage
 
 
 class Transportation(AdventureLogModel):
     """A transportation leg (flight, train, etc.) associated with a collection."""
 
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
-
-    id: int | None = None
+    id: str | None = None
     user: int | str | None = None
     type: str | None = None
     name: str | None = None
@@ -41,8 +35,8 @@ class Transportation(AdventureLogModel):
     start_timezone: str | None = None
     end_timezone: str | None = None
     distance: str | None = None  # DecimalField serialized as string
-    images: list[ContentImage] = []
-    attachments: list[Attachment] = []
+    images: str | None = None  # HyperlinkedRelatedField — URL string
+    attachments: str | None = None  # HyperlinkedRelatedField — URL string
     start_code: str | None = None
     end_code: str | None = None
     travel_duration_minutes: int | None = None
