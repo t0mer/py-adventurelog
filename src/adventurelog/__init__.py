@@ -7,9 +7,7 @@ try:
 except PackageNotFoundError:
     __version__ = "0.0.0"
 
-# TODO: uncomment once client.py is implemented (Task 4)
-# from adventurelog.client import AsyncAdventureLog, AdventureLog  # noqa: E402, F401
-
+from adventurelog.client import AdventureLog, AsyncAdventureLog  # noqa: F401
 from adventurelog.exceptions import (  # noqa: F401
     AdventureLogError,
     APIConnectionError,
@@ -23,6 +21,9 @@ from adventurelog.exceptions import (  # noqa: F401
 
 __all__ = [
     "__version__",
+    # Clients
+    "AsyncAdventureLog",
+    "AdventureLog",
     # Exceptions
     "AdventureLogError",
     "APIConnectionError",
