@@ -15,6 +15,8 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 
+from adventurelog.exceptions import AdventureLogError
+
 if TYPE_CHECKING:
     from adventurelog.http import AdventureLogHTTP
 
@@ -113,7 +115,9 @@ async def fetch_page(
             "results": body,
         }
 
-    return body  # type: ignore[return-value]
+    if not isinstance(body, dict):
+        raise AdventureLogError(f"Unexpected response shape: {type(body)}")
+    return body
 
 
 # ------------------------------------------------------------------

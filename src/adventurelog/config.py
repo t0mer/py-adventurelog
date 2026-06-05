@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -21,10 +21,10 @@ class ClientConfig:
     username: str | None = None
     """AdventureLog username.  Required when ``session_token`` is not set."""
 
-    password: str | None = None
+    password: str | None = field(default=None, repr=False)
     """AdventureLog password.  Required when ``session_token`` is not set."""
 
-    session_token: str | None = None
+    session_token: str | None = field(default=None, repr=False)
     """Pre-obtained ``sessionid`` cookie value.  Skips login when provided."""
 
     timeout: float = 30.0

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 from typing import Any
 
 import httpx
@@ -19,7 +21,11 @@ from adventurelog.exceptions import (
     ValidationError,
 )
 
-_USER_AGENT = "py-adventurelog/0.1.0"
+try:
+    _VERSION = _pkg_version("py-adventurelog")
+except PackageNotFoundError:
+    _VERSION = "0.0.0"
+_USER_AGENT = f"py-adventurelog/{_VERSION}"
 _IDEMPOTENT_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "PUT", "DELETE"})
 
 logger = logging.getLogger(__name__)
@@ -84,6 +90,33 @@ class AdventureLogHTTP:
         return await self._request("DELETE", path, **kwargs)
 
     # ------------------------------------------------------------------
+    # Cookie management
+    # ------------------------------------------------------------------
+
+    def set_cookie(self, name: str, value: str, *, domain: str = "") -> None:
+        """Set a cookie on the underlying httpx client jar."""
+        self._client.cookies.set(name, value, domain=domain or None)
+
+    def delete_cookie(self, name: str) -> None:
+        """Remove a cookie from the underlying httpx client jar."""
+        try:
+            del self._client.cookies[name]
+        except KeyError:
+            pass
+
+    def get_cookie(self, name: str) -> str | None:
+        """Return a cookie value from the client jar, or ``None`` if absent."""
+        return self._client.cookies.get(name)
+
+    async def raw_request(self, method: str, url: str, **kwargs: Any) -> httpx.Response:
+        """Send a request using a full URL, bypassing base_url joining and retries.
+
+        Intended for pre-auth calls (e.g. the login form) where the caller
+        already holds the full URL and retry logic is not appropriate.
+        """
+        return await self._client.request(method, url, **kwargs)
+
+    # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
@@ -108,11 +141,11 @@ class AdventureLogHTTP:
                 response = await self._client.request(method, path, **kwargs)
                 self._raise_for_status(response)
                 return response
-            except (ServerError, APIConnectionError) as exc:
+            except ServerError as exc:
                 last_exc = exc
                 if attempt >= retries:
                     raise
-                delay = 0.5 * (2**attempt)
+                delay = min(0.5 * (2**attempt), 30.0)
                 logger.debug(
                     "Request %s %s failed (attempt %d/%d): %s — retrying in %.1fs",
                     method,
@@ -130,7 +163,7 @@ class AdventureLogHTTP:
                     raise APIConnectionError(
                         f"Connection error on {method} {path}: {exc}"
                     ) from exc
-                delay = 0.5 * (2**attempt)
+                delay = min(0.5 * (2**attempt), 30.0)
                 logger.debug(
                     "Transport error on %s %s (attempt %d/%d) — retrying in %.1fs",
                     method,
@@ -155,7 +188,7 @@ class AdventureLogHTTP:
         # Try to extract a human-readable message from the response body.
         try:
             body = response.json()
-        except Exception:
+        except ValueError:
             body = {}
 
         detail = _extract_detail(body) or response.text

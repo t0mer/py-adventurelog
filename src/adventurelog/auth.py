@@ -7,6 +7,7 @@ session token injection, and logout.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING
 
@@ -42,23 +43,31 @@ class SessionAuth:
         self._http = http
         self._config = config
         self._authenticated = False
+        self._login_lock: asyncio.Lock = asyncio.Lock()
 
     async def ensure_authenticated(self) -> None:
         """Ensure the client is authenticated.
 
         If ``config.session_token`` is set, inject it into the cookie jar and
         return immediately.  Otherwise perform a full login (once only).
+
+        This method is concurrency-safe: a ``asyncio.Lock`` prevents multiple
+        concurrent coroutines from each triggering a separate login call.
         """
         if self._authenticated:
             return
 
-        if self._config.session_token:
-            self._inject_session_token(self._config.session_token)
-            self._authenticated = True
-            logger.debug("Using pre-obtained session token.")
-            return
+        async with self._login_lock:
+            if self._authenticated:  # double-check after acquiring the lock
+                return
 
-        await self.login()
+            if self._config.session_token:
+                self._inject_session_token(self._config.session_token)
+                self._authenticated = True
+                logger.debug("Using pre-obtained session token.")
+                return
+
+            await self.login()
 
     async def login(self) -> None:
         """Perform the Django allauth login flow.
@@ -76,14 +85,15 @@ class SessionAuth:
         base = self._config.base_url
 
         # Step 1: get CSRF token
+        login_url = f"{base}{_LOGIN_PATH}"
         try:
-            get_resp = await self._http._client.get(_LOGIN_PATH)
+            get_resp = await self._http.raw_request("GET", login_url)
         except httpx.TransportError as exc:
             raise AuthenticationError(
                 f"Failed to reach login page: {exc}"
             ) from exc
 
-        csrf_token = self._http._client.cookies.get("csrftoken", "")
+        csrf_token = self._http.get_cookie("csrftoken") or ""
         if not csrf_token:
             # Some deployments set the cookie name differently; try the response
             csrf_token = get_resp.cookies.get("csrftoken", "")
@@ -104,8 +114,9 @@ class SessionAuth:
         }
 
         try:
-            post_resp = await self._http._client.post(
-                _LOGIN_PATH,
+            post_resp = await self._http.raw_request(
+                "POST",
+                login_url,
                 data=form_data,
                 headers=headers,
             )
@@ -117,7 +128,7 @@ class SessionAuth:
         # A successful login redirects to /dashboard (or similar).
         # The httpx client follows redirects, so we check the final URL and
         # cookie jar rather than the raw status code.
-        session_id = self._http._client.cookies.get("sessionid")
+        session_id = self._http.get_cookie("sessionid")
         if not session_id:
             # Check in the response cookies as a fallback.
             session_id = post_resp.cookies.get("sessionid")
@@ -140,7 +151,7 @@ class SessionAuth:
     async def logout(self) -> None:
         """Best-effort logout.  Errors are silently ignored."""
         try:
-            await self._http._client.delete("/_allauth/app/v1/auth/session")
+            await self._http.delete("/_allauth/app/v1/auth/session")
         except Exception as exc:  # noqa: BLE001
             logger.debug("Logout error (ignored): %s", exc)
         finally:
@@ -152,16 +163,13 @@ class SessionAuth:
 
     def _inject_session_token(self, token: str) -> None:
         """Inject a ``sessionid`` cookie value directly into the client jar."""
-        self._http._client.cookies.set(
+        self._http.set_cookie(
             "sessionid", token, domain=_domain_from_base(self._config.base_url)
         )
 
     def _remove_csrftoken(self) -> None:
         """Delete the ``csrftoken`` cookie from the client jar."""
-        try:
-            del self._http._client.cookies["csrftoken"]
-        except KeyError:
-            pass
+        self._http.delete_cookie("csrftoken")
 
 
 def _domain_from_base(base_url: str) -> str:
