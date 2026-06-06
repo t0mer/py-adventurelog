@@ -15,6 +15,8 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any
 
+from urllib.parse import urlparse
+
 from adventurelog.exceptions import AdventureLogError
 
 if TYPE_CHECKING:
@@ -131,14 +133,18 @@ def _relative_path(url: str) -> str:
     The httpx client uses ``base_url`` for relative paths, so we strip the
     scheme and host portion and keep everything from the path onwards.
 
+    Raises ``AdventureLogError`` if the URL has no path component, which
+    would silently redirect pagination to the server root.
+
     >>> _relative_path("https://example.com/api/locations/?page=2")
     '/api/locations/?page=2'
     """
-    # Strip scheme + authority (everything before the first "/" after "://").
-    if "://" in url:
-        rest = url.split("://", 1)[1]
-        slash_idx = rest.find("/")
-        if slash_idx == -1:
-            return "/"
-        return rest[slash_idx:]
-    return url
+    parsed = urlparse(url)
+    path = parsed.path
+    if not path or path == "/":
+        raise AdventureLogError(
+            f"Pagination 'next' URL has no usable path: {url!r}"
+        )
+    if parsed.query:
+        return f"{path}?{parsed.query}"
+    return path
