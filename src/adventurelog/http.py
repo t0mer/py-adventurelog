@@ -48,6 +48,7 @@ class AdventureLogHTTP:
                 "User-Agent": _USER_AGENT,
             },
             follow_redirects=True,
+            verify=True,  # explicit: never disable TLS certificate verification
         )
 
     # ------------------------------------------------------------------
