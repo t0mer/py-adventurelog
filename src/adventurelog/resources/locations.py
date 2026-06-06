@@ -170,3 +170,72 @@ class LocationsResource(BaseResource):
         """
         resp = await self._http.post(f"/api/locations/{id}/duplicate/")
         return Location.model_validate(resp.json())
+
+    async def calendar(
+        self, *, page_size: int = 20, **params: Any
+    ) -> AsyncIterator[Location]:
+        """Async generator over locations in calendar view.
+
+        Args:
+            page_size: Items per page.
+            **params: Additional query parameters (e.g. date range filters).
+
+        Yields:
+            :class:`~adventurelog.models.location.Location` instances.
+        """
+        async for item in paginate(
+            self._http,
+            "/api/locations/calendar/",
+            params={"page_size": page_size, **params},
+        ):
+            yield Location.model_validate(item)
+
+    async def filtered(
+        self, *, page_size: int = 20, **params: Any
+    ) -> AsyncIterator[Location]:
+        """Async generator over filtered locations.
+
+        Args:
+            page_size: Items per page.
+            **params: Filter parameters forwarded to the server.
+
+        Yields:
+            :class:`~adventurelog.models.location.Location` instances.
+        """
+        async for item in paginate(
+            self._http,
+            "/api/locations/filtered/",
+            params={"page_size": page_size, **params},
+        ):
+            yield Location.model_validate(item)
+
+    async def pins(
+        self, *, page_size: int = 20, **params: Any
+    ) -> AsyncIterator[Location]:
+        """Async generator over map-pin locations.
+
+        Args:
+            page_size: Items per page.
+            **params: Additional query parameters.
+
+        Yields:
+            :class:`~adventurelog.models.location.Location` instances.
+        """
+        async for item in paginate(
+            self._http,
+            "/api/locations/pins/",
+            params={"page_size": page_size, **params},
+        ):
+            yield Location.model_validate(item)
+
+    async def additional_info(self, id: str) -> dict[str, Any]:
+        """Retrieve additional metadata for a location.
+
+        Args:
+            id: The location's UUID.
+
+        Returns:
+            Raw response dict with extra location info.
+        """
+        resp = await self._http.get(f"/api/locations/{id}/additional-info/")
+        return dict(resp.json())

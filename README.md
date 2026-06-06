@@ -14,6 +14,7 @@ An async-first Python SDK for [AdventureLog](https://adventurelog.app/) — the 
 - **Auto-pagination** — `list()` methods follow DRF `next` links transparently; you consume a single async generator
 - **Stateless-friendly** — pass a pre-obtained `token` to skip the login round-trip (ideal for multi-user bots)
 - **Resilient** — configurable per-request timeout and automatic retry with exponential back-off on 5xx / transport errors
+- **Full API coverage** — all 112 endpoints across 21 resource namespaces
 
 ## Installation
 
@@ -125,64 +126,78 @@ async with AsyncAdventureLog(...) as al:
         print(loc.name)
 ```
 
-### Creating a location
+### Creating and sharing a collection
 
 ```python
 async with AsyncAdventureLog(...) as al:
-    loc = await al.locations.create({
-        "name": "Colosseum",
-        "description": "Ancient amphitheatre in Rome",
-        "is_visited": True,
-        "latitude": 41.8902,
-        "longitude": 12.4922,
-    })
-    print(f"Created: {loc.id}")
+    trip = await al.collections.create({"name": "Italy 2025"})
+
+    # Check sharing eligibility, then share with a user
+    info = await al.collections.can_share(trip.id)
+    if info.get("can_share"):
+        await al.collections.share(trip.id, "user-uuid-here")
+
+    # Accept a pending invite
+    await al.collections.accept_invite("collection-uuid")
 ```
 
-### Organising a trip with collections
+### Reverse-geocoding and place search
 
 ```python
 async with AsyncAdventureLog(...) as al:
-    trip = await al.collections.create({"name": "Italy 2025", "is_archived": False})
-
-    async for col in al.collections.list():
-        print(col.name)
-
-    shared = [c async for c in al.collections.shared()]
+    place = await al.reverse_geocode.reverse_geocode(lat=41.89, lng=12.49)
+    results = await al.reverse_geocode.search(query="Colosseum Rome")
+    await al.reverse_geocode.mark_visited_region(lat=41.89, lng=12.49)
 ```
 
-### Working with a pre-obtained token (bot use case)
-
-```python
-# Obtained and cached from a previous session:
-TOKEN = "abc123sessionid"
-
-async with AsyncAdventureLog(
-    base_url="https://your-server.com",
-    token=TOKEN,
-) as al:
-    me = await al.user.me()
-```
-
-### Recording a visit
+### AI generation
 
 ```python
 async with AsyncAdventureLog(...) as al:
-    visit = await al.visits.create({
-        "location": "uuid-of-location",
-        "start_date": "2025-06-01",
-        "end_date": "2025-06-03",
-    })
+    desc = await al.generate.description(location_id="uuid-here")
+    img  = await al.generate.image(location_id="uuid-here")
+    recs = await al.generate.recommendations(query="beaches in Italy")
+
+    # Download ICS calendar
+    ics_bytes = await al.generate.ics_calendar()
+    with open("adventures.ics", "wb") as f:
+        f.write(ics_bytes)
 ```
 
-### Geo lookups
+### Integrations (Immich, Strava, Wanderer)
 
 ```python
 async with AsyncAdventureLog(...) as al:
-    countries = await al.geo.countries()
-    regions = await al.geo.regions()
-    visited = await al.geo.visited_cities()
-    await al.geo.create_visited_city({"city": 42})
+    # Immich — browse albums and import photos
+    albums = await al.integrations.immich_albums()
+    results = await al.integrations.immich_search(query="Paris")
+
+    # Strava — import fitness activities
+    auth_url = await al.integrations.strava_authorize()
+    activities = await al.integrations.strava_activities()
+
+    # Wanderer — sync trails
+    await al.integrations.wanderer_refresh()
+    trails = await al.integrations.wanderer_trails()
+```
+
+### Backup export and import
+
+```python
+async with AsyncAdventureLog(...) as al:
+    data = await al.backup.export()
+    with open("backup.zip", "wb") as f:
+        f.write(data)
+```
+
+### Global search and stats
+
+```python
+async with AsyncAdventureLog(...) as al:
+    results = await al.search.search(query="Tokyo")
+    tag_types = await al.search.tag_types()
+    counts = await al.stats.counts("myusername")
+    print(f"Visited {counts['visited_location_count']} locations")
 ```
 
 ### Managing API keys
@@ -198,7 +213,7 @@ async with AsyncAdventureLog(...) as al:
 
 ## API Reference
 
-All resource namespaces are available as attributes of the client after entering the context manager.
+All 21 resource namespaces are available as attributes on the client after entering the context manager.
 
 ---
 
@@ -213,9 +228,13 @@ All resource namespaces are available as attributes of the client after entering
 | `update(id, data)` | `Location` | Full replace |
 | `partial_update(id, data)` | `Location` | Partial update |
 | `delete(id)` | `None` | Delete |
-| `all_locations(*, page_size=100, **params)` | `AsyncIterator[Location]` | Stream via `/all/` endpoint (no visibility filters) |
+| `all_locations(*, page_size=100, **params)` | `AsyncIterator[Location]` | Stream via `/all/` (no visibility filter) |
 | `quick_add(data)` | `Location` | Create via quick-add shortcut |
 | `duplicate(id)` | `Location` | Duplicate an existing location |
+| `calendar(*, page_size=20, **params)` | `AsyncIterator[Location]` | Stream calendar view |
+| `filtered(*, page_size=20, **params)` | `AsyncIterator[Location]` | Stream filtered locations |
+| `pins(*, page_size=20, **params)` | `AsyncIterator[Location]` | Stream map-pin locations |
+| `additional_info(id)` | `dict` | Retrieve extra metadata for a location |
 
 ---
 
@@ -230,9 +249,20 @@ All resource namespaces are available as attributes of the client after entering
 | `update(id, data)` | `Collection` | Full replace |
 | `partial_update(id, data)` | `Collection` | Partial update |
 | `delete(id)` | `None` | Delete |
+| `all_collections(*, page_size=20, **params)` | `AsyncIterator[Collection]` | Stream via `/all/` |
 | `archived(*, page_size=20, **params)` | `AsyncIterator[Collection]` | Stream archived collections |
 | `shared(*, page_size=20, **params)` | `AsyncIterator[Collection]` | Stream collections shared with current user |
 | `duplicate(id)` | `Collection` | Duplicate a collection |
+| `import_collection(data)` | `Collection` | Import a collection from form data |
+| `invites(*, page_size=20, **params)` | `AsyncIterator[Collection]` | Stream pending invites |
+| `can_share(id)` | `dict` | Check whether the collection can be shared |
+| `export(id)` | `bytes` | Download export file |
+| `share(id, user_uuid)` | `dict` | Share with a user |
+| `unshare(id, user_uuid)` | `dict` | Remove sharing with a user |
+| `revoke_invite(id, invite_uuid)` | `dict` | Revoke a pending invite |
+| `accept_invite(id)` | `dict` | Accept an invite |
+| `decline_invite(id)` | `dict` | Decline an invite |
+| `leave(id)` | `dict` | Leave a shared collection |
 
 ---
 
@@ -299,6 +329,7 @@ All resource namespaces are available as attributes of the client after entering
 | `update(id, data)` | `Lodging` | Full replace |
 | `partial_update(id, data)` | `Lodging` | Partial update |
 | `delete(id)` | `None` | Delete |
+| `quick_add(data)` | `Lodging` | Create via quick-add shortcut |
 
 ---
 
@@ -338,6 +369,23 @@ All resource namespaces are available as attributes of the client after entering
 | `update(id, data)` | `ContentImage` | Full replace |
 | `partial_update(id, data)` | `ContentImage` | Partial update |
 | `delete(id)` | `None` | Delete |
+| `fetch_from_url(data)` | `ContentImage` | Fetch and create an image from a remote URL |
+| `import_from_urls(data)` | `list[ContentImage]` | Bulk-import images from a list of URLs |
+| `image_delete(id)` | `dict` | Delete the file associated with an image record |
+| `toggle_primary(id)` | `ContentImage` | Toggle the primary flag on an image |
+
+---
+
+### `al.attachments` — `AttachmentsResource`
+
+| Method | Returns | Description |
+|---|---|---|
+| `list()` | `list[dict]` | All attachments for current user |
+| `get(id)` | `dict` | Retrieve by UUID |
+| `create(data)` | `dict` | Create a new attachment |
+| `update(id, data)` | `dict` | Full replace |
+| `partial_update(id, data)` | `dict` | Partial update |
+| `delete(id)` | `None` | Delete |
 
 ---
 
@@ -368,6 +416,12 @@ All resource namespaces are available as attributes of the client after entering
 | `visited_regions()` | `list[VisitedRegion]` | Regions marked as visited |
 | `create_visited_region(data)` | `VisitedRegion` | Mark a region as visited |
 | `delete_visited_region(id)` | `None` | Remove a visited-region record |
+| `check_point_in_region(**params)` | `dict` | Check whether a lat/lng falls in a region |
+| `region_check_all_adventures(data)` | `dict` | Check all adventures against region boundaries |
+| `cities_in_region(region_id)` | `list[dict]` | All cities within a region |
+| `city_visits_in_region(region_id)` | `list[dict]` | Visited cities within a region |
+| `regions_by_country(country_code)` | `list[dict]` | Regions for a country code |
+| `visits_by_country(country_code)` | `list[dict]` | Visits for a country code |
 
 ---
 
@@ -383,6 +437,8 @@ All resource namespaces are available as attributes of the client after entering
 | `update_item(id, data)` | `CollectionItineraryItem` | Full replace |
 | `partial_update_item(id, data)` | `CollectionItineraryItem` | Partial update |
 | `delete_item(id)` | `None` | Delete |
+| `auto_generate(data)` | `dict` | Auto-generate an itinerary for a collection |
+| `reorder(data)` | `dict` | Reorder itinerary items |
 
 #### Itinerary days (`/api/itinerary-days/`)
 
@@ -403,9 +459,112 @@ All resource namespaces are available as attributes of the client after entering
 |---|---|---|
 | `me()` | `CustomUserDetails` | Current authenticated user profile |
 | `update_profile(data)` | `CustomUserDetails` | Partially update user profile |
+| `get_user(username)` | `CustomUserDetails` | Retrieve a user's public profile by username |
+| `users()` | `list[CustomUserDetails]` | All users (admin) |
 | `api_keys()` | `list[APIKey]` | All API keys (prefix/metadata only) |
 | `create_api_key(name)` | `dict` | Create API key — full key returned once |
 | `delete_api_key(id)` | `None` | Revoke and delete an API key |
+| `is_registration_disabled()` | `dict` | Check whether public registration is disabled |
+| `social_providers()` | `list[dict]` | Configured social auth providers |
+| `disable_password()` | `dict` | Disable password login for current user |
+| `enable_password()` | `None` | Re-enable password login |
+| `mobile_qr()` | `dict` | Get the mobile QR login code |
+| `create_mobile_qr()` | `dict` | Generate a new mobile QR login code |
+| `delete_mobile_qr()` | `None` | Delete the mobile QR login code |
+
+---
+
+### `al.reverse_geocode` — `ReverseGeocodeResource`
+
+| Method | Returns | Description |
+|---|---|---|
+| `reverse_geocode(**params)` | `dict` | Reverse-geocode a lat/lng to a place name |
+| `place_details(**params)` | `dict` | Retrieve detailed information about a place |
+| `search(**params)` | `dict` | Search for places by name or query string |
+| `mark_visited_region(**params)` | `dict` | Mark the region at a lat/lng as visited |
+
+---
+
+### `al.integrations` — `IntegrationsResource`
+
+#### General
+
+| Method | Returns | Description |
+|---|---|---|
+| `list()` | `list[dict]` | All configured integrations |
+
+#### Immich (self-hosted photo management)
+
+| Method | Returns | Description |
+|---|---|---|
+| `immich_list()` | `list[dict]` | All Immich integration configs |
+| `immich_create(data)` | `dict` | Create an Immich integration |
+| `immich_get(id)` | `dict` | Retrieve by UUID |
+| `immich_update(id, data)` | `dict` | Full replace |
+| `immich_partial_update(id, data)` | `dict` | Partial update |
+| `immich_delete(id)` | `None` | Delete |
+| `immich_albums()` | `list[dict]` | All albums from Immich |
+| `immich_album(album_id)` | `dict` | Retrieve a single album |
+| `immich_search(**params)` | `dict` | Search Immich assets |
+| `immich_get_image(integration_id, image_id)` | `dict` | Retrieve a specific Immich image |
+
+#### Strava (fitness activity tracking)
+
+| Method | Returns | Description |
+|---|---|---|
+| `strava_activities()` | `list[dict]` | Imported Strava activities |
+| `strava_activity(activity_id)` | `dict` | Retrieve a single Strava activity |
+| `strava_authorize()` | `dict` | Initiate OAuth authorization flow |
+| `strava_callback(**params)` | `dict` | Handle OAuth callback |
+| `strava_disable()` | `dict` | Disconnect Strava |
+
+#### Wanderer (trail/route tracking)
+
+| Method | Returns | Description |
+|---|---|---|
+| `wanderer_create(data)` | `dict` | Create / connect Wanderer integration |
+| `wanderer_update(id, data)` | `dict` | Update Wanderer config |
+| `wanderer_trails()` | `list[dict]` | Trails imported from Wanderer |
+| `wanderer_refresh()` | `dict` | Re-sync trails from Wanderer |
+| `wanderer_disable()` | `dict` | Disconnect Wanderer |
+
+---
+
+### `al.generate` — `GenerateResource`
+
+| Method | Returns | Description |
+|---|---|---|
+| `description(**params)` | `dict` | AI-generated description for a location |
+| `image(**params)` | `dict` | AI-generated image for a location |
+| `ics_calendar(**params)` | `bytes` | ICS calendar export |
+| `globespin(**params)` | `dict` | Globe-spin data for 3-D visualisation |
+| `recommendations(**params)` | `dict` | AI-powered location recommendations |
+
+---
+
+### `al.backup` — `BackupResource`
+
+| Method | Returns | Description |
+|---|---|---|
+| `export()` | `bytes` | Download full data backup |
+| `import_backup(data)` | `dict` | Restore data from a backup |
+
+---
+
+### `al.search` — `SearchResource`
+
+| Method | Returns | Description |
+|---|---|---|
+| `search(**params)` | `dict` | Full-text search across all content |
+| `tag_types()` | `list[dict]` | Available tag type values |
+
+---
+
+### `al.stats` — `StatsResource`
+
+| Method | Returns | Description |
+|---|---|---|
+| `counts(username)` | `dict` | Adventure count statistics for a user |
 
 ---
 

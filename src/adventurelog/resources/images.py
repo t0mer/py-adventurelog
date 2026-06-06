@@ -83,3 +83,51 @@ class ImagesResource(BaseResource):
             id: The image's UUID.
         """
         await self._http.delete(f"/api/images/{id}/")
+
+    async def fetch_from_url(self, data: dict[str, Any]) -> ContentImage:
+        """Fetch and create an image record from a remote URL.
+
+        Args:
+            data: Dict containing the image URL and any associated metadata.
+
+        Returns:
+            The newly created :class:`~adventurelog.models.image.ContentImage`.
+        """
+        resp = await self._http.post("/api/images/fetch_from_url/", json=data)
+        return ContentImage.model_validate(resp.json())
+
+    async def import_from_urls(self, data: dict[str, Any]) -> list[ContentImage]:
+        """Bulk-import images from a list of remote URLs.
+
+        Args:
+            data: Dict containing a list of URLs and associated metadata.
+
+        Returns:
+            List of :class:`~adventurelog.models.image.ContentImage` instances.
+        """
+        resp = await self._http.post("/api/images/import_from_urls/", json=data)
+        return [ContentImage.model_validate(item) for item in resp.json()]
+
+    async def image_delete(self, id: str) -> dict[str, Any]:
+        """Delete the image file associated with an image record.
+
+        Args:
+            id: The image's UUID.
+
+        Returns:
+            Raw response dict.
+        """
+        resp = await self._http.post(f"/api/images/{id}/image_delete/")
+        return dict(resp.json())
+
+    async def toggle_primary(self, id: str) -> ContentImage:
+        """Toggle the primary flag on an image.
+
+        Args:
+            id: The image's UUID.
+
+        Returns:
+            The updated :class:`~adventurelog.models.image.ContentImage`.
+        """
+        resp = await self._http.post(f"/api/images/{id}/toggle_primary/")
+        return ContentImage.model_validate(resp.json())

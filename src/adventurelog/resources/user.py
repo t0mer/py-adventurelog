@@ -75,3 +75,77 @@ class UserResource(BaseResource):
             id: The API key's UUID.
         """
         await self._http.delete(f"/auth/api-keys/{id}/")
+
+    async def get_user(self, username: str) -> CustomUserDetails:
+        """Retrieve a user's public profile by username.
+
+        Args:
+            username: The target user's username.
+
+        Returns:
+            :class:`~adventurelog.models.user.CustomUserDetails` for that user.
+        """
+        resp = await self._http.get(f"/auth/user/{username}/")
+        return CustomUserDetails.model_validate(resp.json())
+
+    async def users(self) -> list[CustomUserDetails]:
+        """Return all users (admin use).
+
+        Returns:
+            List of :class:`~adventurelog.models.user.CustomUserDetails`.
+        """
+        resp = await self._http.get("/auth/users/")
+        return [CustomUserDetails.model_validate(item) for item in resp.json()]
+
+    async def is_registration_disabled(self) -> dict[str, Any]:
+        """Check whether public registration is disabled on this server.
+
+        Returns:
+            Raw response dict (e.g. ``{"is_disabled": true}``).
+        """
+        resp = await self._http.get("/auth/is-registration-disabled/")
+        return dict(resp.json())
+
+    async def social_providers(self) -> list[dict[str, Any]]:
+        """Return configured social authentication providers.
+
+        Returns:
+            List of raw provider dicts.
+        """
+        resp = await self._http.get("/auth/social-providers/")
+        return list(resp.json())
+
+    async def disable_password(self) -> dict[str, Any]:
+        """Disable password-based login for the current user.
+
+        Returns:
+            Raw response dict.
+        """
+        resp = await self._http.post("/auth/disable-password/")
+        return dict(resp.json())
+
+    async def enable_password(self) -> None:
+        """Re-enable password-based login for the current user."""
+        await self._http.delete("/auth/disable-password/")
+
+    async def mobile_qr(self) -> dict[str, Any]:
+        """Retrieve the mobile QR login code for the current user.
+
+        Returns:
+            Raw response dict containing the QR payload.
+        """
+        resp = await self._http.get("/auth/mobile-qr/")
+        return dict(resp.json())
+
+    async def create_mobile_qr(self) -> dict[str, Any]:
+        """Generate a new mobile QR login code.
+
+        Returns:
+            Raw response dict containing the new QR payload.
+        """
+        resp = await self._http.post("/auth/mobile-qr/")
+        return dict(resp.json())
+
+    async def delete_mobile_qr(self) -> None:
+        """Delete the mobile QR login code for the current user."""
+        await self._http.delete("/auth/mobile-qr/")
