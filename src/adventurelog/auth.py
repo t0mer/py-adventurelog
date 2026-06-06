@@ -98,6 +98,12 @@ class SessionAuth:
             # Some deployments set the cookie name differently; try the response
             csrf_token = get_resp.cookies.get("csrftoken", "")
 
+        if not csrf_token:
+            raise AuthenticationError(
+                "Failed to obtain CSRF token from the login page. "
+                "Verify the server URL is correct and the login page is reachable."
+            )
+
         logger.debug("Obtained CSRF token for login (len=%d).", len(csrf_token))
 
         # Step 2: POST login form
