@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py-adventurelog"
-version = "0.1.2"
+version = "0.1.3"
 description = "Async Python SDK for AdventureLog — the self-hosted travel tracker"
 readme = "README.md"
 license = { file = "LICENSE" }
