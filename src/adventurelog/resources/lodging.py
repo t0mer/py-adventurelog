@@ -81,3 +81,15 @@ class LodgingResource(BaseResource):
             id: The lodging's UUID.
         """
         await self._http.delete(f"/api/lodging/{id}/")
+
+    async def quick_add(self, data: dict[str, Any]) -> Lodging:
+        """Create a lodging record via the quick-add shortcut endpoint.
+
+        Args:
+            data: Minimal lodging data for quick creation.
+
+        Returns:
+            The newly created :class:`~adventurelog.models.lodging.Lodging`.
+        """
+        resp = await self._http.post("/api/lodging/quick-add/", json=data)
+        return Lodging.model_validate(resp.json())

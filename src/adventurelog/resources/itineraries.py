@@ -171,3 +171,27 @@ class ItinerariesResource(BaseResource):
             id: The itinerary day's UUID.
         """
         await self._http.delete(f"/api/itinerary-days/{id}/")
+
+    async def auto_generate(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Auto-generate an itinerary for a collection.
+
+        Args:
+            data: Generation parameters (e.g. collection ID, preferences).
+
+        Returns:
+            Raw response dict with the generated itinerary.
+        """
+        resp = await self._http.post("/api/itineraries/auto-generate/", json=data)
+        return dict(resp.json())
+
+    async def reorder(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Reorder itinerary items.
+
+        Args:
+            data: Reorder payload (e.g. ordered list of item IDs).
+
+        Returns:
+            Raw response dict.
+        """
+        resp = await self._http.post("/api/itineraries/reorder/", json=data)
+        return dict(resp.json())
