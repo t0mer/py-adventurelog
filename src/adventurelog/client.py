@@ -25,15 +25,22 @@ from adventurelog.auth import SessionAuth
 from adventurelog.config import ClientConfig
 from adventurelog.http import AdventureLogHTTP
 from adventurelog.resources.activities import ActivitiesResource
+from adventurelog.resources.attachments import AttachmentsResource
+from adventurelog.resources.backup import BackupResource
 from adventurelog.resources.categories import CategoriesResource
 from adventurelog.resources.checklists import ChecklistsResource
 from adventurelog.resources.collections import CollectionsResource
+from adventurelog.resources.generate import GenerateResource
 from adventurelog.resources.geo import GeoResource
 from adventurelog.resources.images import ImagesResource
+from adventurelog.resources.integrations import IntegrationsResource
 from adventurelog.resources.itineraries import ItinerariesResource
 from adventurelog.resources.locations import LocationsResource
 from adventurelog.resources.lodging import LodgingResource
 from adventurelog.resources.notes import NotesResource
+from adventurelog.resources.reverse_geocode import ReverseGeocodeResource
+from adventurelog.resources.search import SearchResource
+from adventurelog.resources.stats import StatsResource
 from adventurelog.resources.trails import TrailsResource
 from adventurelog.resources.transportations import TransportationsResource
 from adventurelog.resources.user import UserResource
@@ -76,11 +83,18 @@ class AsyncAdventureLog:
     lodging: LodgingResource
     trails: TrailsResource
     images: ImagesResource
+    attachments: AttachmentsResource
     categories: CategoriesResource
     geo: GeoResource
     visits: VisitsResource
     itineraries: ItinerariesResource
     user: UserResource
+    backup: BackupResource
+    generate: GenerateResource
+    integrations: IntegrationsResource
+    reverse_geocode: ReverseGeocodeResource
+    search: SearchResource
+    stats: StatsResource
 
     def __init__(
         self,
@@ -120,11 +134,18 @@ class AsyncAdventureLog:
         self.lodging = LodgingResource(self._http)
         self.trails = TrailsResource(self._http)
         self.images = ImagesResource(self._http)
+        self.attachments = AttachmentsResource(self._http)
         self.categories = CategoriesResource(self._http)
         self.geo = GeoResource(self._http)
         self.visits = VisitsResource(self._http)
         self.itineraries = ItinerariesResource(self._http)
         self.user = UserResource(self._http)
+        self.backup = BackupResource(self._http)
+        self.generate = GenerateResource(self._http)
+        self.integrations = IntegrationsResource(self._http)
+        self.reverse_geocode = ReverseGeocodeResource(self._http)
+        self.search = SearchResource(self._http)
+        self.stats = StatsResource(self._http)
 
         return self
 
@@ -265,6 +286,9 @@ class AdventureLog:
         self.lodging = _SyncResourceProxy(self._async_client.lodging, self._loop)
         self.trails = _SyncResourceProxy(self._async_client.trails, self._loop)
         self.images = _SyncResourceProxy(self._async_client.images, self._loop)
+        self.attachments = _SyncResourceProxy(
+            self._async_client.attachments, self._loop
+        )
         self.categories = _SyncResourceProxy(self._async_client.categories, self._loop)
         self.geo = _SyncResourceProxy(self._async_client.geo, self._loop)
         self.visits = _SyncResourceProxy(self._async_client.visits, self._loop)
@@ -272,6 +296,16 @@ class AdventureLog:
             self._async_client.itineraries, self._loop
         )
         self.user = _SyncResourceProxy(self._async_client.user, self._loop)
+        self.backup = _SyncResourceProxy(self._async_client.backup, self._loop)
+        self.generate = _SyncResourceProxy(self._async_client.generate, self._loop)
+        self.integrations = _SyncResourceProxy(
+            self._async_client.integrations, self._loop
+        )
+        self.reverse_geocode = _SyncResourceProxy(
+            self._async_client.reverse_geocode, self._loop
+        )
+        self.search = _SyncResourceProxy(self._async_client.search, self._loop)
+        self.stats = _SyncResourceProxy(self._async_client.stats, self._loop)
         return self
 
     def __exit__(self, *exc: Any) -> None:
