@@ -4,15 +4,41 @@ build-backend = "hatchling.build"
 
 [project]
 name = "py-adventurelog"
-version = "0.1.0"
-description = "Async Python SDK for AdventureLog"
+version = "0.1.1"
+description = "Async Python SDK for AdventureLog — the self-hosted travel tracker"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
+authors = [
+    { name = "Tomer Klein", email = "tomer.klein@gmail.com" },
+]
+keywords = [
+    "adventurelog", "travel", "async", "sdk", "api", "httpx",
+    "self-hosted", "locations", "trips", "itinerary",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "httpx>=0.27",
     "pydantic>=2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/t0mer/py-adventurelog"
+Repository = "https://github.com/t0mer/py-adventurelog"
+"Bug Tracker" = "https://github.com/t0mer/py-adventurelog/issues"
 
 [project.optional-dependencies]
 dev = [
